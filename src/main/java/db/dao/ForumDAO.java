@@ -76,8 +76,8 @@ public class ForumDAO {
             rsGetForum = csGetForum.executeQuery();
             rsGetForum.next();
             Long id = rsGetForum.getLong("id");
-            if(input.has("realted")) {
-                JSONArray related = input.getJSONArray("realted");
+            if(input.has("related")) {
+                JSONArray related = input.getJSONArray("related");
                 for(Object i : related) {
                     switch ((String)i) {
                         case "user" : needUser = true;
@@ -165,8 +165,8 @@ public class ForumDAO {
                 sinceDate = input.getString("since");
             else sinceDate = "1970-10-10 01-01-01";
 
-            if(input.has("realted")) {
-                JSONArray related = input.getJSONArray("realted");
+            if(input.has("related")) {
+                JSONArray related = input.getJSONArray("related");
                 for(Object i : related) {
                     switch ((String)i) {
                         case "user" : needUser = true;
@@ -234,8 +234,8 @@ public class ForumDAO {
                 sinceDate = input.getString("since");
             else sinceDate = "1970-10-10 01-01-01";
 
-            if(input.has("realted")) {
-                JSONArray related = input.getJSONArray("realted");
+            if(input.has("related")) {
+                JSONArray related = input.getJSONArray("related");
                 for(Object i : related) {
                     switch ((String)i) {
                         case "user" : needUser = true;

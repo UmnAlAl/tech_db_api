@@ -32,9 +32,22 @@ public class UserDAO {
         try {
 
             String email = input.getString("email");
-            String username = input.getString("username");
-            String name = input.getString("name");
-            String about = input.getString("about");
+
+            String username;
+            if(input.get("username") instanceof String)
+                username = input.getString("username");
+            else username = null;
+
+            String name;
+            if(input.get("name") instanceof String)
+                name = input.getString("name");
+            else name = null;
+
+            String about;
+            if(input.get("about") instanceof String)
+                about = input.getString("about");
+            else about = null;
+
             int isAnonymous = input.getBoolean("isAnonymous") == true ? 1 : 0;
 
             cs = connection.prepareCall("{ ? = call userCreate(?, ?, ?, ?, ?) }");

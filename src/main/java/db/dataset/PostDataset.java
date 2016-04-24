@@ -24,8 +24,8 @@ public class PostDataset {
     public JSONObject toJSONObject() {
         JSONObject post = new JSONObject();
         post.put("id", id);
-        post.put("idThred", idThread);
-        post.put("parent", idParent == -1 ? null : idParent);
+        post.put("thread", idThread);
+        post.put("parent", idParent);
         post.put("date", date);
         post.put("message", message);
         post.put("isApproved", isApproved != 0);
@@ -44,8 +44,8 @@ public class PostDataset {
         message = post.getString("message");
         idThread = post.getLong("thread");
 
-        if(post.has("idParent"))
-            idParent = post.getLong("parent");
+        if(post.has("parent"))
+            idParent = post.get("parent").equals(JSONObject.NULL) ? null : post.getLong("parent");
         else idParent = null;
 
         if(post.has("isApproved")) {

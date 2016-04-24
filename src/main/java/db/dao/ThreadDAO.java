@@ -5,6 +5,7 @@ import db.dataset.ThreadDataset;
 import db.dataset.UserDataset;
 import main.Main;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.*;
@@ -21,6 +22,7 @@ public class ThreadDAO {
     public static void getThreadFromResultSet(ThreadDataset threadDataset, ResultSet rs) throws SQLException {
         threadDataset.id = rs.getLong("id");
         threadDataset.date = rs.getString("date");
+        threadDataset.date = threadDataset.date.substring(0, threadDataset.date.lastIndexOf('.'));
         threadDataset.idUser = rs.getLong("idUser");
         threadDataset.idForum = rs.getLong("idForum");
         threadDataset.title = rs.getString("title");
@@ -58,7 +60,7 @@ public class ThreadDAO {
             */
 
 
-            cs = connection.prepareCall("{ ? = call threadCreate(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }");
+            cs = connection.prepareCall("{ ? = call threadCreate(?, ?, ?, ?, ?, ?, ?, ?) }");
             cs.registerOutParameter(1, Types.INTEGER);
             cs.setObject(2, forum);
             cs.setObject(3, threadDataset.title);
@@ -91,15 +93,17 @@ public class ThreadDAO {
         CallableStatement csGetThread = null;
         ResultSet rsGetThread = null;
         try {
-            id = input.getLong("id");
-            if(input.has("realted")) {
-                JSONArray related = input.getJSONArray("realted");
+            id = input.getLong("thread"); /*"id"*/
+            if(input.has("related")) {
+                JSONArray related = input.getJSONArray("related");
                 for(Object i : related) {
                     switch ((String)i) {
                         case "user" : needUser = true;
                             break;
                         case "forum" : needForum = true;
                             break;
+                        case "thread" :
+                            throw new JSONException("related thread");
                     }
                 }
             }
@@ -140,9 +144,10 @@ public class ThreadDAO {
             res = threadDataset.toJSONObject();
 
             Long posts = 0L;
+            rsGetThread.close();
             csGetNumPosts = connection.prepareCall("{ call getNumOfPostsByThreadId(?) }");
             csGetNumPosts.setObject(1, id);
-            rsGetNumOfPosts = csGetThread.executeQuery();
+            rsGetNumOfPosts = csGetNumPosts.executeQuery();
             rsGetNumOfPosts.next();
             posts = rsGetNumOfPosts.getLong(1);
             res.put("posts", posts);

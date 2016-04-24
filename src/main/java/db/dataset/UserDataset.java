@@ -17,9 +17,9 @@ public class UserDataset {
         JSONObject user = new JSONObject();
         user.put("id", id);
         user.put("email", email);
-        user.put("username", username);
-        user.put("name", name);
-        user.put("about", about);
+        user.put("username", username == null ? JSONObject.NULL : username);
+        user.put("name", name == null ? JSONObject.NULL : name);
+        user.put("about", about == null ? JSONObject.NULL : about);
         user.put("isAnonymous", isAnonymous != 0);
         return user;
     }

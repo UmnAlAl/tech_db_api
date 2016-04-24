@@ -2,6 +2,7 @@ package frontend;
 
 import db.DbService;
 import frontend.utils.RequestParser;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.servlet.ServletException;
@@ -9,6 +10,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.*;
 
 /**
  * Created by Installed on 24.04.2016.
@@ -25,22 +27,24 @@ public class GlobalServlet extends HttpServlet {
         JSONObject jsonReq = RequestParser.parseRequestBody(request.getReader());
         String[] splittedUri = request.getRequestURI().split("/");
         JSONObject jsonRes = handlePost(splittedUri, jsonReq);
+        response.setContentType("text/html;charset=utf-8");
+        response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().println(jsonRes.toString(4));
     }
 
     @Override
     public void doGet(HttpServletRequest request,
                        HttpServletResponse response) throws ServletException, IOException {
-        JSONObject result;
-        String last = request.getRequestURI();
-        last = last.substring(last.lastIndexOf('/') + 1, last.length());
-
-
+        String[] splittedUri = request.getRequestURI().split("/");
+        JSONObject jsonRes = handleGet(splittedUri, request);
+        response.setContentType("text/html;charset=utf-8");
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.getWriter().println(jsonRes.toString(4));
     }
 
 
     public JSONObject handleGet(String[] splittedUri, HttpServletRequest request) {
-        JSONObject data = new JSONObject();
+        JSONObject data = parseHttpGetRequest(request);
         if(splittedUri.length == 4) {
             switch (splittedUri[3]) {
                 case "status" : return dbService.status(null);
@@ -52,22 +56,22 @@ public class GlobalServlet extends HttpServlet {
                 case "forum" : {
                     switch (splittedUri[4]) {
                         case "details" :
-                            return  dbService.forumCreate(data);
+                            return  dbService.forumDetails(data);
                         case "listPosts" :
-                            return  dbService.forumCreate(data);
+                            return  dbService.forumListPosts(data);
                         case "listThreads" :
-                            return  dbService.forumCreate(data);
+                            return  dbService.forumListThreads(data);
                         case "listUsers" :
-                            return  dbService.forumCreate(data);
+                            return  dbService.forumListUsers(data);
                     }
                 }//case forum
                 break;
                 case "post" : {
                     switch (splittedUri[4]) {
                         case "details" :
-                            return dbService.postCreate(data);
+                            return dbService.postDetails(data);
                         case "list" :
-                            return dbService.postRemove(data);
+                            return dbService.postList(data);
 
                     }
                 }//case post
@@ -75,24 +79,24 @@ public class GlobalServlet extends HttpServlet {
                 case "user" : {
                     switch (splittedUri[4]) {
                         case "details" :
-                            return dbService.userCreate(data);
+                            return dbService.userDetails(data);
                         case "listFollowers" :
-                            return dbService.userFollow(data);
+                            return dbService.userListFollowers(data);
                         case "listFollowing" :
-                            return dbService.userUnfollow(data);
+                            return dbService.userListFollowing(data);
                         case "listPosts" :
-                            return dbService.userUpdateProfile(data);
+                            return dbService.userListPosts(data);
                     }
                 }//case user
                 break;
                 case "thread" : {
                     switch (splittedUri[4]) {
                         case "details" :
-                            return dbService.threadClose(data);
+                            return dbService.threadDetails(data);
                         case "list" :
-                            return dbService.threadCreate(data);
+                            return dbService.threadList(data);
                         case "listPosts" :
-                            return dbService.threadOpen(data);
+                            return dbService.threadListPosts(data);
 
                     }
                 }//case thread
@@ -106,6 +110,23 @@ public class GlobalServlet extends HttpServlet {
         return defaultResponse;
     }
 
+    public JSONObject parseHttpGetRequest(HttpServletRequest request) {
+        Map<String, String> paramsNamesAndVals = new HashMap<>();
+        Enumeration<String> paramsNames =  request.getParameterNames();
+        JSONArray related = new JSONArray();
+        for (String s : Collections.list(paramsNames)) {
+            if(!s.equals("related")) {
+                paramsNamesAndVals.put(s, request.getParameter(s));
+            }
+            else {
+                String[] relatedStrArr = request.getParameterValues(s);
+                related = new JSONArray(relatedStrArr);
+            }
+        }
+        JSONObject result = new JSONObject(paramsNamesAndVals);
+        result.put("related", related);
+        return result;
+    }
 
 
     public JSONObject handlePost(String[] splittedUri, JSONObject data) {

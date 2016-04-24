@@ -2,6 +2,7 @@ package db;
 
 import db.dao.*;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Connection;
@@ -25,8 +26,10 @@ public class DbService {
         JSONObject res = new JSONObject();
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             CommonDAO commonDAO = new CommonDAO(connection);
             String s = commonDAO.clear();
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", s);
@@ -35,7 +38,21 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -45,8 +62,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             CommonDAO commonDAO = new CommonDAO(connection);
             response = commonDAO.status();
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -55,7 +74,21 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -66,8 +99,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ForumDAO forumDAO = new ForumDAO(connection);
             response = forumDAO.create(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -76,7 +111,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -86,8 +140,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ForumDAO forumDAO = new ForumDAO(connection);
             response = forumDAO.details(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -96,7 +152,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -106,8 +181,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ForumDAO forumDAO = new ForumDAO(connection);
             response = forumDAO.listPosts(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -116,7 +193,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -126,8 +222,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ForumDAO forumDAO = new ForumDAO(connection);
             response = forumDAO.listThreads(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -136,7 +234,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -146,8 +263,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ForumDAO forumDAO = new ForumDAO(connection);
             response = forumDAO.listUsers(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -156,7 +275,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -167,8 +305,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.create(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -177,7 +317,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -187,17 +346,48 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.details(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
             return res;
         }
         catch (SQLException ex) {
-            res.put("code", 4);
+            switch (ex.getSQLState()) {
+                case "S1000" : {
+                    res.put("code", 1);
+                    res.put("response", ex.getMessage());
+                }
+                break;
+                default: {
+                    res.put("code", 4);
+                    res.put("response", ex.getMessage());
+                }
+                break;
+            }
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
+            return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
             res.put("response", ex.getMessage());
             return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -207,8 +397,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.list(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -217,7 +409,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -227,8 +438,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.remove(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -237,7 +450,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -247,8 +479,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.restore(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -257,7 +491,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -267,8 +520,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.update(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -277,7 +532,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -287,8 +561,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             PostDAO postDAO = new PostDAO(connection);
             response = postDAO.vote(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -297,7 +573,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -308,17 +603,47 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.create(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
             return res;
         }
         catch (SQLException ex) {
-            res.put("code", 4);
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
+            switch (ex.getSQLState()) {
+                case "23000" : {
+                    res.put("code", 5);
+                    res.put("response", "Such user already exists.");
+                    return res;
+                }
+                default: {
+                    res.put("code", 4);
+                    res.put("response", ex.getMessage());
+                    return res;
+                }
+            }//switch
+        }//catch
+        catch (JSONException ex) {
+            res.put("code", 2);
             res.put("response", ex.getMessage());
             return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -328,8 +653,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.details(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -338,7 +665,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -348,8 +694,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.follow(input.getString("follower"), input.getString("followee"));
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -358,7 +706,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -368,8 +735,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.listFollowers(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -378,7 +747,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -388,8 +776,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.listFollowing(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -398,7 +788,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -408,8 +817,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.listPosts(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -418,7 +829,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -428,8 +858,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.unfollow(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -438,7 +870,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -448,8 +899,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             UserDAO userDAO = new UserDAO(connection);
             response = userDAO.updateProfile(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -458,7 +911,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -469,8 +941,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.close(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -479,7 +953,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -489,8 +982,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.create(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -499,7 +994,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -509,8 +1023,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.details(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -519,7 +1035,35 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            switch (ex.getMessage()) {
+                case "related thread" : {
+                    res.put("code", 3);
+                    res.put("response", ex.getMessage());
+                }
+                break;
+                default: {
+                    res.put("code", 3);
+                    res.put("response", ex.getMessage());
+                }
+            }
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -529,8 +1073,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.list(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -539,7 +1085,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -549,8 +1114,10 @@ public class DbService {
         JSONArray response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.listPosts(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -559,7 +1126,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -569,8 +1155,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.open(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -579,7 +1167,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -589,8 +1196,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.remove(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -599,7 +1208,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -609,8 +1237,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.restore(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -619,7 +1249,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -629,8 +1278,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.subscribe(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -639,7 +1290,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -649,8 +1319,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.unsubscribe(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -659,7 +1331,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -669,8 +1360,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.update(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -679,7 +1372,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 
@@ -689,8 +1401,10 @@ public class DbService {
         JSONObject response;
         try {
             connection = dbConnector.getConnection();
+            connection.setAutoCommit(false);
             ThreadDAO threadDAO = new ThreadDAO(connection);
             response = threadDAO.vote(input);
+            connection.commit();
             res = new JSONObject();
             res.put("code", 0);
             res.put("response", response);
@@ -699,7 +1413,26 @@ public class DbService {
         catch (SQLException ex) {
             res.put("code", 4);
             res.put("response", ex.getMessage());
+            try {
+                connection.rollback();
+            }
+            catch (Exception ignore) {
+
+            }
             return res;
+        }
+        catch (JSONException ex) {
+            res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (Exception ignore) {
+
+            }
         }
     }
 

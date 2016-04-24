@@ -20,7 +20,8 @@ public class PostDAO {
     public static void getPostFromResultSet(PostDataset postDataset, ResultSet rs) throws SQLException {
         postDataset.id = rs.getLong("id");
         postDataset.date = rs.getString("date");
-        postDataset.idParent = rs.getLong("idParent");
+        postDataset.date = postDataset.date.substring(0, postDataset.date.lastIndexOf('.'));
+        postDataset.idParent = rs.getObject("idParent") == null ? null : rs.getLong("idParent");
         postDataset.idThread = rs.getLong("idThread");
         postDataset.idUser = rs.getLong("idUser");
         postDataset.idForum = rs.getLong("idForum");
@@ -78,7 +79,7 @@ public class PostDAO {
             */
 
 
-            cs = connection.prepareCall("{ ? = call userCreate(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }");
+            cs = connection.prepareCall("{ ? = call postCreate(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }");
             cs.registerOutParameter(1, Types.INTEGER);
             cs.setObject(2, postDataset.idThread);
             cs.setObject(3, user);
@@ -116,9 +117,9 @@ public class PostDAO {
         ResultSet rsGetPost = null;
         UserDataset postDataset = new UserDataset();
         try {
-            id = input.getLong("id");
-            if(input.has("realted")) {
-                JSONArray related = input.getJSONArray("realted");
+            id = input.getLong("post");
+            if(input.has("related")) {
+                JSONArray related = input.getJSONArray("related");
                 for(Object i : related) {
                     switch ((String)i) {
                         case "user" : needUser = true;
