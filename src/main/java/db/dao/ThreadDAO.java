@@ -35,7 +35,22 @@ public class ThreadDAO {
     }
 
     public JSONObject close (JSONObject input) throws SQLException {
-        return null;
+        CallableStatement cs = null;
+        try {
+
+            Long id = input.getLong("thread");
+            cs = connection.prepareCall("{ call threadClose(?) }");
+            cs.setObject(1, id);
+            cs.execute();
+            return input;
+        }
+        catch (Exception e) {
+            throw e;
+        }
+        finally {
+            if(cs != null)
+                cs.close();
+        }
     }
 
     public JSONObject create (JSONObject input) throws SQLException {
@@ -142,14 +157,7 @@ public class ThreadDAO {
             rsGetThread.next();
             getThreadFromResultSet(threadDataset, rsGetThread);
             res = threadDataset.toJSONObject();
-
-            Long posts = 0L;
-            rsGetThread.close();
-            csGetNumPosts = connection.prepareCall("{ call getNumOfPostsByThreadId(?) }");
-            csGetNumPosts.setObject(1, id);
-            rsGetNumOfPosts = csGetNumPosts.executeQuery();
-            rsGetNumOfPosts.next();
-            posts = rsGetNumOfPosts.getLong(1);
+            Long posts = rsGetThread.getLong("cnt");
             res.put("posts", posts);
 
             jsGetUser = userDAO.detailsById(threadDataset.idUser);
@@ -187,7 +195,7 @@ public class ThreadDAO {
 
     public JSONArray list (JSONObject input) throws SQLException {
         CallableStatement cs = null;
-        PostDataset postDataset = new PostDataset();
+        ThreadDataset threadDataset = new ThreadDataset();
         ResultSet rs = null;
         JSONArray array = null;
         JSONObject tmp = null;
@@ -212,7 +220,7 @@ public class ThreadDAO {
 
             array = new JSONArray();
             if(input.has("user")) {
-                String founderEmail = input.getString("thread");
+                String founderEmail = input.getString("user");
                 cs = connection.prepareCall("{ call threadListThreadsByFounderEmail(?, ?, ?, ?) }");
                 cs.setObject(1, founderEmail);
                 cs.setObject(2, limit);
@@ -220,10 +228,11 @@ public class ThreadDAO {
                 cs.setObject(4, sinceDate);
                 rs = cs.executeQuery();
                 while (rs.next()) {
-                    PostDAO.getPostFromResultSet(postDataset, rs);
-                    tmp = postDataset.toJSONObject();
+                    ThreadDAO.getThreadFromResultSet(threadDataset, rs);
+                    tmp = threadDataset.toJSONObject();
                     tmp.put("forum", rs.getString("shortName"));
                     tmp.put("user", founderEmail);
+                    tmp.put("posts", rs.getLong("cnt"));
                     array.put(tmp);
                 }
 
@@ -237,10 +246,11 @@ public class ThreadDAO {
                 cs.setObject(4, sinceDate);
                 rs = cs.executeQuery();
                 while (rs.next()) {
-                    PostDAO.getPostFromResultSet(postDataset, rs);
-                    tmp = postDataset.toJSONObject();
+                    ThreadDAO.getThreadFromResultSet(threadDataset, rs);
+                    tmp = threadDataset.toJSONObject();
                     tmp.put("forum", forumShortname);
                     tmp.put("user", rs.getString("email"));
+                    tmp.put("posts", rs.getLong("cnt"));
                     array.put(tmp);
                 }
             }
@@ -464,7 +474,6 @@ public class ThreadDAO {
 
             Long id = input.getLong("thread");
             int vote = input.getInt("vote");
-            String slug = input.getString("slug");
             cs = connection.prepareCall("{ call threadVote(?, ?) }");
             cs.setObject(1, id);
             cs.setObject(2, vote);

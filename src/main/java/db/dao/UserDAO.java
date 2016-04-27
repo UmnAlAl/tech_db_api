@@ -381,7 +381,6 @@ public class UserDAO {
             String email = input.getString("user");
             String name = input.getString("name");
             String about = input.getString("about");
-            String emailFollowee = input.getString("followee");
             cs = connection.prepareCall("{ call userUpdateByEmail(?, ?, ?) }");
             cs.setObject(1, email);
             cs.setObject(2, name);
