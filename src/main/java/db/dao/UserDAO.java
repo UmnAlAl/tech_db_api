@@ -135,7 +135,7 @@ public class UserDAO {
             rsGetFollowers = csGetFollowers.executeQuery();
             JSONArray arrayOfFollowers = new JSONArray();
             while (rsGetFollowers.next()) {
-                arrayOfFollowers.put(rsGetFollowers.getString("email"));
+                arrayOfFollowers.put(rsGetFollowers.getString("emailFollower"));
             }
 
             csGetFollowees = connection.prepareCall("{ call userGetEmailsOfFolloweesByUserId(?) }");
@@ -143,7 +143,7 @@ public class UserDAO {
             rsGetFollowees = csGetFollowees.executeQuery();
             JSONArray arrayOfFollowees = new JSONArray();
             while (rsGetFollowees.next()) {
-                arrayOfFollowees.put(rsGetFollowees.getString("email"));
+                arrayOfFollowees.put(rsGetFollowees.getString("emailFollowee"));
             }
 
             csGetSubscriptions = connection.prepareCall("{ call userGetSubscriptionsByUserId(?) }");
