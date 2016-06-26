@@ -138,7 +138,7 @@ public class ThreadDAO {
     public JSONObject detailsById (long id,
                                    boolean needUser,
                                    boolean needForum) throws SQLException {
-        CallableStatement csGetThread = null;
+        PreparedStatement csGetThread = null;
         CallableStatement csGetNumPosts = null;
         ResultSet rsGetThread = null;
         ResultSet rsGetNumOfPosts = null;
@@ -151,7 +151,9 @@ public class ThreadDAO {
         ForumDAO forumDAO = new ForumDAO(connection);
         JSONObject res = null;
         try {
-            csGetThread = connection.prepareCall("{ call getThreadById(?) }");
+            csGetThread = connection.prepareStatement(
+                    "SELECT t1.*, IF(t1.isDeleted != 0, 0, t1.posts) AS cnt FROM thread AS t1 WHERE t1.id = ?"
+            );
             csGetThread.setObject(1, id);
             rsGetThread = csGetThread.executeQuery();
             rsGetThread.next();
@@ -187,16 +189,20 @@ public class ThreadDAO {
             if(rsGetThread != null)
                 rsGetThread.close();
             if(csGetNumPosts != null)
-                csGetThread.close();
+                csGetNumPosts.close();
             if(rsGetNumOfPosts != null)
-                rsGetThread.close();
+                rsGetNumOfPosts.close();
         }
     }
 
     public JSONArray list (JSONObject input) throws SQLException {
-        CallableStatement cs = null;
+        PreparedStatement cs = null;
+        PreparedStatement csForumId = null;
+        PreparedStatement csUserId = null;
         ThreadDataset threadDataset = new ThreadDataset();
         ResultSet rs = null;
+        ResultSet rsForumId = null;
+        ResultSet rsUserId = null;
         JSONArray array = null;
         JSONObject tmp = null;
         try {
@@ -221,12 +227,29 @@ public class ThreadDAO {
             array = new JSONArray();
             if(input.has("user")) {
                 String founderEmail = input.getString("user");
-                cs = connection.prepareCall("{ call threadListThreadsByFounderEmail(?, ?, ?, ?) }");
-                cs.setObject(1, founderEmail);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+
+                csUserId = connection.prepareStatement("SELECT user.id FROM user WHERE user.email = ?");
+                csUserId.setObject(1, founderEmail);
+                rsUserId = csUserId.executeQuery();
+                rsUserId.next();
+                Long userId = rsUserId.getLong("id");
+
+                //threadListThreadsByFounderEmail
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                            "SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date DESC LIMIT ?"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date ASC LIMIT ?"
+                    );
+                }
+                cs.setObject(1, userId);
+                cs.setObject(2, sinceDate);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
+
                 while (rs.next()) {
                     ThreadDAO.getThreadFromResultSet(threadDataset, rs);
                     tmp = threadDataset.toJSONObject();
@@ -238,17 +261,34 @@ public class ThreadDAO {
 
             }
             else if(input.has("forum")) {
-                String forumShortname = input.getString("forum");
-                cs = connection.prepareCall("{ call threadListThreadsByParentForum(?, ?, ?, ?) }");
-                cs.setObject(1, forumShortname);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+                String shortName = input.getString("forum");
+
+                csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
+                csForumId.setObject(1, shortName);
+                rsForumId = csForumId.executeQuery();
+                rsForumId.next();
+                Long forumId = rsForumId.getLong("id");
+
+                //threadListThreadsByParentForum
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                            "SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date DESC LIMIT ?"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date ASC LIMIT ?"
+                    );
+                }
+                cs.setObject(1, forumId);
+                cs.setObject(2, sinceDate);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
+
                 while (rs.next()) {
                     ThreadDAO.getThreadFromResultSet(threadDataset, rs);
                     tmp = threadDataset.toJSONObject();
-                    tmp.put("forum", forumShortname);
+                    tmp.put("forum", shortName);
                     tmp.put("user", rs.getString("email"));
                     tmp.put("posts", rs.getLong("cnt"));
                     array.put(tmp);
@@ -265,11 +305,19 @@ public class ThreadDAO {
                 cs.close();
             if(rs != null)
                 rs.close();
+            if(csForumId != null)
+                csForumId.close();
+            if(rsForumId != null)
+                rsForumId.close();
+            if(csUserId != null)
+                csUserId.close();
+            if(rsUserId != null)
+                rsUserId.close();
         }
     }
 
     public JSONArray listPosts (JSONObject input) throws SQLException {
-        CallableStatement cs = null;
+        PreparedStatement cs = null;
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
         JSONArray array = null;
@@ -301,27 +349,54 @@ public class ThreadDAO {
 
 
             if(sort.equals("flat")) {
-                cs = connection.prepareCall("{ call threadListPostsFlat(?, ?, ?, ?) }");
+                //threadListPostsFlat
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                    );
+                }
                 cs.setObject(1, idThread);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+                cs.setObject(2, sinceDate);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
             }
             else if(sort.equals("tree")) {
-                cs = connection.prepareCall("{ call threadListPostsTree(?, ?, ?, ?) }");
+                //threadListPostsTree
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY firstIndex DESC, p.matPath ASC LIMIT ?"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? p.matPath ASC LIMIT ?"
+                    );
+                }
                 cs.setObject(1, idThread);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+                cs.setObject(2, sinceDate);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
             }
             else if(sort.equals("parent_tree")) {
-                cs = connection.prepareCall("{ call threadListPostsParentTree(?, ?, ?, ?) }");
-                cs.setObject(1, idThread);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+                //threadListPostsParentTree
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                          "SELECT p1.* FROM post AS p1 WHERE p1.date >= ? AND p1.firstIndex IN ( SELECT * FROM ( SELECT DISTINCT post.firstIndex FROM post WHERE post.idThread = ? ORDER BY post.firstIndex DESC LIMIT ? ) AS p2) ORDER BY p1.firstIndex DESC, p1.matPath ASC"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT p1.* FROM post AS p1 WHERE p1.date >= ? AND p1.firstIndex IN ( SELECT * FROM ( SELECT DISTINCT post.firstIndex FROM post WHERE post.idThread = ? ORDER BY post.firstIndex ASC LIMIT ? ) AS p2) ORDER BY p1.firstIndex ASC, p1.matPath ASC"
+                    );
+                }
+                cs.setObject(1, sinceDate);
+                cs.setObject(2, idThread);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
             }
 

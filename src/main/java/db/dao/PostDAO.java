@@ -148,7 +148,7 @@ public class PostDAO {
                                    boolean needUser,
                                    boolean needThread,
                                    boolean needForum) throws SQLException {
-        CallableStatement csGetPost = null;
+        PreparedStatement csGetPost = null;
         ResultSet rsGetPost = null;
         JSONObject jsGetPost = null;
         JSONObject jsGetUser = null;
@@ -160,7 +160,7 @@ public class PostDAO {
         ForumDAO forumDAO = new ForumDAO(connection);
         JSONObject res = null;
         try {
-            csGetPost = connection.prepareCall("{ call getPostById(?) }");
+            csGetPost = connection.prepareStatement("SELECT * FROM post WHERE post.id = ?");
             csGetPost.setObject(1, id);
             rsGetPost = csGetPost.executeQuery();
             rsGetPost.next();
@@ -206,9 +206,11 @@ public class PostDAO {
     }
 
     public JSONArray list (JSONObject input) throws SQLException {
-        CallableStatement cs = null;
+        PreparedStatement cs = null;
+        PreparedStatement csForumId = null;
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
+        ResultSet rsForumId = null;
         JSONArray array = null;
         JSONObject tmp = null;
         try {
@@ -233,21 +235,47 @@ public class PostDAO {
             array = new JSONArray();
             if(input.has("thread")) {
                 Long idThread = input.getLong("thread");
-                cs = connection.prepareCall("{ call postListByThreadId(?, ?, ?, ?) }");
+
+                //postListByThreadId
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                    );
+                }
                 cs.setObject(1, idThread);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+                cs.setObject(2, sinceDate);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
 
             }
             else if(input.has("forum")) {
-                String forumShortname = input.getString("forum");
-                cs = connection.prepareCall("{ call postListByForumShortName(?, ?, ?, ?) }");
-                cs.setObject(1, forumShortname);
-                cs.setObject(2, limit);
-                cs.setObject(3, order);
-                cs.setObject(4, sinceDate);
+                String shortName = input.getString("forum");
+
+                csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
+                csForumId.setObject(1, shortName);
+                rsForumId = csForumId.executeQuery();
+                rsForumId.next();
+                Long forumId = rsForumId.getLong("id");
+
+                //postListByForumShortName
+                if(order.equals("desc")) {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idForum = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                    );
+                }
+                else {
+                    cs = connection.prepareStatement(
+                            "SELECT p.* FROM post AS p WHERE p.idForum = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                    );
+                }
+                cs.setObject(1, forumId);
+                cs.setObject(2, sinceDate);
+                cs.setObject(3, limit);
                 rs = cs.executeQuery();
             }
 
@@ -269,6 +297,10 @@ public class PostDAO {
                 cs.close();
             if(rs != null)
                 rs.close();
+            if(csForumId != null)
+                csForumId.close();
+            if(rsForumId != null)
+                rsForumId.close();
         }
     }
 

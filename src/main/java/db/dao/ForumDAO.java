@@ -67,11 +67,11 @@ public class ForumDAO {
         boolean needUser = false;
         String shortName;
 
-        CallableStatement csGetForum = null;
+        PreparedStatement csGetForum = null;
         ResultSet rsGetForum = null;
         try {
             shortName = input.getString("forum");
-            csGetForum = connection.prepareCall("{ call getForumByShortName(?) }");
+            csGetForum = connection.prepareStatement("SELECT * FROM forum WHERE forum.shortName = ?");
             csGetForum.setObject(1, shortName);
             rsGetForum = csGetForum.executeQuery();
             rsGetForum.next();
@@ -100,7 +100,7 @@ public class ForumDAO {
 
     public JSONObject detailsById (long id,
                                     boolean needUser) throws SQLException {
-        CallableStatement csGetForum = null;
+        PreparedStatement csGetForum = null;
         ResultSet rsGetForum = null;
         JSONObject jsGetUser = null;
         JSONObject jsGetForum = null;
@@ -108,7 +108,7 @@ public class ForumDAO {
         UserDAO userDAO = new UserDAO(connection);
         JSONObject res = null;
         try {
-            csGetForum = connection.prepareCall("{ call getForumById(?) }");
+            csGetForum = connection.prepareStatement("SELECT * FROM forum WHERE forum.id = ?");
             csGetForum.setObject(1, id);
             rsGetForum = csGetForum.executeQuery();
             rsGetForum.next();
@@ -138,10 +138,12 @@ public class ForumDAO {
     }
 
     public JSONArray listPosts (JSONObject input) throws SQLException {
-        CallableStatement cs = null;
+        PreparedStatement cs = null;
+        PreparedStatement csForumId = null;
         ForumDataset forumDataset = new ForumDataset();
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
+        ResultSet rsForumId = null;
         JSONArray array = null;
         JSONObject tmp = null;
         Boolean needUser = false;
@@ -181,11 +183,27 @@ public class ForumDAO {
 
             array = new JSONArray();
             String shortName = input.getString("forum");
-            cs = connection.prepareCall("{ call forumListPostsByForumShortName(?, ?, ?, ?) }");
-            cs.setObject(1, shortName);
-            cs.setObject(2, limit);
-            cs.setObject(3, order);
-            cs.setObject(4, sinceDate);
+
+            csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
+            csForumId.setObject(1, shortName);
+            rsForumId = csForumId.executeQuery();
+            rsForumId.next();
+            Long forumId = rsForumId.getLong("id");
+
+            //forumListPostsByForumShortName
+            if(order.equals("desc")) {
+                cs = connection.prepareStatement(
+                        "SELECT * FROM post WHERE post.idForum = ? AND post.date >= ? ORDER BY post.date DESC LIMIT ?"
+                );
+            }
+            else {
+                cs = connection.prepareStatement(
+                        "SELECT * FROM post WHERE post.idForum = ? AND post.date >= ? ORDER BY post.date ASC LIMIT ?"
+                );
+            }
+            cs.setObject(1, forumId);
+            cs.setObject(2, sinceDate);
+            cs.setObject(3, limit);
             rs = cs.executeQuery();
             while (rs.next()) {
                 PostDAO.getPostFromResultSet(postDataset, rs);
@@ -203,13 +221,19 @@ public class ForumDAO {
                 cs.close();
             if(rs != null)
                 rs.close();
+            if(csForumId != null)
+                csForumId.close();
+            if(rsForumId != null)
+                rsForumId.close();
         }
     }
 
     public JSONArray listThreads (JSONObject input) throws SQLException {
-        CallableStatement cs = null;
+        PreparedStatement cs = null;
+        PreparedStatement csForumId = null;
         ThreadDataset threadDataset = new ThreadDataset();
         ResultSet rs = null;
+        ResultSet rsForumId = null;
         JSONArray array = null;
         JSONObject tmp = null;
         Boolean needUser = false;
@@ -248,11 +272,27 @@ public class ForumDAO {
 
             array = new JSONArray();
             String shortName = input.getString("forum");
-            cs = connection.prepareCall("{ call forumListThreadsByForumShortName(?, ?, ?, ?) }");
-            cs.setObject(1, shortName);
-            cs.setObject(2, limit);
-            cs.setObject(3, order);
-            cs.setObject(4, sinceDate);
+
+            csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
+            csForumId.setObject(1, shortName);
+            rsForumId = csForumId.executeQuery();
+            rsForumId.next();
+            Long forumId = rsForumId.getLong("id");
+
+            //forumListThreadsByForumShortName
+            if(order.equals("desc")) {
+                cs = connection.prepareStatement(
+                        "SELECT * FROM thread WHERE thread.idForum = ? AND thread.date >= ? ORDER BY thread.date DESC LIMIT ?"
+                );
+            }
+            else {
+                cs = connection.prepareStatement(
+                        "SELECT * FROM thread WHERE thread.idForum = ? AND thread.date >= ? ORDER BY thread.date ASC LIMIT ?"
+                );
+            }
+            cs.setObject(1, forumId);
+            cs.setObject(2, sinceDate);
+            cs.setObject(3, limit);
             rs = cs.executeQuery();
             while (rs.next()) {
                 ThreadDAO.getThreadFromResultSet(threadDataset, rs);
@@ -270,13 +310,19 @@ public class ForumDAO {
                 cs.close();
             if(rs != null)
                 rs.close();
+            if(csForumId != null)
+                csForumId.close();
+            if(rsForumId != null)
+                rsForumId.close();
         }
     }
 
     public JSONArray listUsers (JSONObject input) throws SQLException {
-        CallableStatement cs = null;
+        PreparedStatement cs = null;
+        PreparedStatement csForumId = null;
         UserDataset userDataset = new UserDataset();
         ResultSet rs = null;
+        ResultSet rsForumId = null;
         JSONArray array = null;
         JSONObject tmp = null;
         Boolean needUser = false;
@@ -303,12 +349,29 @@ public class ForumDAO {
 
             array = new JSONArray();
             String shortName = input.getString("forum");
-            cs = connection.prepareCall("{ call forumListUserByForumShortName(?, ?, ?, ?) }");
-            cs.setObject(1, shortName);
-            cs.setObject(2, limit);
-            cs.setObject(3, order);
-            cs.setObject(4, since_id);
+
+            csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
+            csForumId.setObject(1, shortName);
+            rsForumId = csForumId.executeQuery();
+            rsForumId.next();
+            Long forumId = rsForumId.getLong("id");
+
+            //forumListUserByForumShortName
+            if(order.equals("desc")) {
+                cs = connection.prepareStatement(
+                        "SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = ? AND p1.idUser >= ? GROUP BY p1.idUser ORDER BY p1.name DESC LIMIT ?"
+                );
+            }
+            else {
+                cs = connection.prepareStatement(
+                        "SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = ? AND p1.idUser >= ? GROUP BY p1.idUser ORDER BY p1.name ASC LIMIT ?"
+                );
+            }
+            cs.setObject(1, forumId);
+            cs.setObject(2, since_id);
+            cs.setObject(3, limit);
             rs = cs.executeQuery();
+
             while (rs.next()) {
                 UserDAO.getUserFromResultSet(userDataset, rs);
                 tmp = userDAO.detailsById(userDataset.id);
@@ -325,6 +388,10 @@ public class ForumDAO {
                 cs.close();
             if(rs != null)
                 rs.close();
+            if(csForumId != null)
+                csForumId.close();
+            if(rsForumId != null)
+                rsForumId.close();
         }
     }
 

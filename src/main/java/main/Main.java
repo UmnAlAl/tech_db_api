@@ -29,7 +29,7 @@ public class Main {
         public static final int STANDART_PORT = 9090;
         public static final String STANDART_MYSQL_HOST = "localhost";
         public static final String STANDART_MYSQL_PORT = "3306";
-        public static final String STANDART_MYSQL_DB_NAME = "dbSUBD";
+        public static final String STANDART_MYSQL_DB_NAME = "dbsubd";
         public static final String STANDART_MYSQL_LOGIN = "test";
         public static final String STANDART_MYSQL_PASSWORD = "test";
         public static final String STANDART_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
@@ -40,8 +40,14 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         int port = STANDART_SERVER_PORT;
+        int maxThreads = 700;
+        int minThreads = 15;
         if(args.length > 0) {
             port = Integer.valueOf(args[0]);
+        }
+        if(args.length > 1) {
+            maxThreads = Integer.valueOf(args[1]);
+            minThreads = Integer.valueOf(args[2]);
         }
 
         DbService dbService = new DbService(
@@ -78,12 +84,12 @@ public class Main {
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[]{context});
 
-        QueuedThreadPool threadPool = new QueuedThreadPool(4, 1, 300000, new BlockingArrayQueue<Runnable>(1000));
+        QueuedThreadPool threadPool = new QueuedThreadPool(maxThreads, minThreads/*, 300000, new BlockingArrayQueue<Runnable>(1000)*/);
 
         Server server = new Server(threadPool);
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
-
+        //connector.setHost("127.0.0.1");
         server.addConnector(connector);
 
         server.setHandler(handlers);
