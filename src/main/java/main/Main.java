@@ -40,8 +40,8 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         int port = STANDART_SERVER_PORT;
-        int maxThreads = 700;
-        int minThreads = 15;
+        int maxThreads = 5;
+        int minThreads = 1;
         if(args.length > 0) {
             port = Integer.valueOf(args[0]);
         }

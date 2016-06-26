@@ -138,7 +138,7 @@ public class ThreadDAO {
     public JSONObject detailsById (long id,
                                    boolean needUser,
                                    boolean needForum) throws SQLException {
-        PreparedStatement csGetThread = null;
+        Statement csGetThread = null;
         CallableStatement csGetNumPosts = null;
         ResultSet rsGetThread = null;
         ResultSet rsGetNumOfPosts = null;
@@ -151,11 +151,12 @@ public class ThreadDAO {
         ForumDAO forumDAO = new ForumDAO(connection);
         JSONObject res = null;
         try {
-            csGetThread = connection.prepareStatement(
-                    "SELECT t1.*, IF(t1.isDeleted != 0, 0, t1.posts) AS cnt FROM thread AS t1 WHERE t1.id = ?"
+            csGetThread = connection.createStatement();
+            rsGetThread = csGetThread.executeQuery(
+                    String.format("SELECT t1.*, IF(t1.isDeleted != 0, 0, t1.posts) AS cnt FROM thread AS t1 WHERE t1.id = %d",
+                            id
+                    )
             );
-            csGetThread.setObject(1, id);
-            rsGetThread = csGetThread.executeQuery();
             rsGetThread.next();
             getThreadFromResultSet(threadDataset, rsGetThread);
             res = threadDataset.toJSONObject();
@@ -196,9 +197,9 @@ public class ThreadDAO {
     }
 
     public JSONArray list (JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csForumId = null;
-        PreparedStatement csUserId = null;
+        Statement cs = null;
+        Statement csForumId = null;
+        Statement csUserId = null;
         ThreadDataset threadDataset = new ThreadDataset();
         ResultSet rs = null;
         ResultSet rsForumId = null;
@@ -228,27 +229,35 @@ public class ThreadDAO {
             if(input.has("user")) {
                 String founderEmail = input.getString("user");
 
-                csUserId = connection.prepareStatement("SELECT user.id FROM user WHERE user.email = ?");
-                csUserId.setObject(1, founderEmail);
-                rsUserId = csUserId.executeQuery();
+                csUserId = connection.createStatement();
+                rsUserId = csUserId.executeQuery(
+                        String.format("SELECT user.id FROM user WHERE user.email = '%s'",
+                                founderEmail
+                        )
+                );
                 rsUserId.next();
                 Long userId = rsUserId.getLong("id");
 
                 //threadListThreadsByFounderEmail
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                            "SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date DESC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date DESC LIMIT %d",
+                                    userId,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date ASC LIMIT %d",
+                                    userId,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, userId);
-                cs.setObject(2, sinceDate);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
 
                 while (rs.next()) {
                     ThreadDAO.getThreadFromResultSet(threadDataset, rs);
@@ -263,27 +272,34 @@ public class ThreadDAO {
             else if(input.has("forum")) {
                 String shortName = input.getString("forum");
 
-                csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
-                csForumId.setObject(1, shortName);
-                rsForumId = csForumId.executeQuery();
+                csForumId = connection.createStatement();
+                String s = String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName);
+                rsForumId = csForumId.executeQuery(
+                        String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
+                );
                 rsForumId.next();
                 Long forumId = rsForumId.getLong("id");
 
                 //threadListThreadsByParentForum
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                            "SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date DESC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date DESC LIMIT %d",
+                                    forumId,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = ? AND t.date >= ? GROUP BY t.id ORDER BY t.date ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date ASC LIMIT %d",
+                                    forumId,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, forumId);
-                cs.setObject(2, sinceDate);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
 
                 while (rs.next()) {
                     ThreadDAO.getThreadFromResultSet(threadDataset, rs);
@@ -317,7 +333,7 @@ public class ThreadDAO {
     }
 
     public JSONArray listPosts (JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
+        Statement cs = null;
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
         JSONArray array = null;
@@ -350,54 +366,69 @@ public class ThreadDAO {
 
             if(sort.equals("flat")) {
                 //threadListPostsFlat
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idThread = %d AND p.date >= '%s' ORDER BY p.date DESC LIMIT %d",
+                                    idThread,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idThread = %d AND p.date >= '%s' ORDER BY p.date ASC LIMIT %d",
+                                    idThread,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, idThread);
-                cs.setObject(2, sinceDate);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
             }
             else if(sort.equals("tree")) {
                 //threadListPostsTree
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY firstIndex DESC, p.matPath ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idThread = %d AND p.date >= '%s' ORDER BY firstIndex DESC, p.matPath ASC LIMIT %d",
+                                    idThread,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? p.matPath ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idThread = %d AND p.date >= '%s' ORDER BY p.matPath ASC LIMIT %d",
+                                    idThread,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, idThread);
-                cs.setObject(2, sinceDate);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
             }
             else if(sort.equals("parent_tree")) {
                 //threadListPostsParentTree
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                          "SELECT p1.* FROM post AS p1 WHERE p1.date >= ? AND p1.firstIndex IN ( SELECT * FROM ( SELECT DISTINCT post.firstIndex FROM post WHERE post.idThread = ? ORDER BY post.firstIndex DESC LIMIT ? ) AS p2) ORDER BY p1.firstIndex DESC, p1.matPath ASC"
+                    rs = cs.executeQuery(
+                          String.format("SELECT p1.* FROM post AS p1 WHERE p1.date >= '%s' AND p1.firstIndex IN ( SELECT * FROM ( SELECT DISTINCT post.firstIndex FROM post WHERE post.idThread = %d ORDER BY post.firstIndex DESC LIMIT %d ) AS p2) ORDER BY p1.firstIndex DESC, p1.matPath ASC",
+                                  sinceDate,
+                                  idThread,
+                                  limit
+                          )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT p1.* FROM post AS p1 WHERE p1.date >= ? AND p1.firstIndex IN ( SELECT * FROM ( SELECT DISTINCT post.firstIndex FROM post WHERE post.idThread = ? ORDER BY post.firstIndex ASC LIMIT ? ) AS p2) ORDER BY p1.firstIndex ASC, p1.matPath ASC"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p1.* FROM post AS p1 WHERE p1.date >= '%s' AND p1.firstIndex IN ( SELECT * FROM ( SELECT DISTINCT post.firstIndex FROM post WHERE post.idThread = %d ORDER BY post.firstIndex ASC LIMIT %d ) AS p2) ORDER BY p1.firstIndex ASC, p1.matPath ASC",
+                                    sinceDate,
+                                    idThread,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, sinceDate);
-                cs.setObject(2, idThread);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
             }
 
             array = new JSONArray();

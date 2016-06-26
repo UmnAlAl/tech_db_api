@@ -148,7 +148,7 @@ public class PostDAO {
                                    boolean needUser,
                                    boolean needThread,
                                    boolean needForum) throws SQLException {
-        PreparedStatement csGetPost = null;
+        Statement csGetPost = null;
         ResultSet rsGetPost = null;
         JSONObject jsGetPost = null;
         JSONObject jsGetUser = null;
@@ -160,9 +160,10 @@ public class PostDAO {
         ForumDAO forumDAO = new ForumDAO(connection);
         JSONObject res = null;
         try {
-            csGetPost = connection.prepareStatement("SELECT * FROM post WHERE post.id = ?");
-            csGetPost.setObject(1, id);
-            rsGetPost = csGetPost.executeQuery();
+            csGetPost = connection.createStatement();
+            rsGetPost = csGetPost.executeQuery(
+                    String.format("SELECT * FROM post WHERE post.id = %d", id)
+            );
             rsGetPost.next();
 
             getPostFromResultSet(postDataset, rsGetPost);
@@ -206,8 +207,8 @@ public class PostDAO {
     }
 
     public JSONArray list (JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csForumId = null;
+        Statement cs = null;
+        Statement csForumId = null;
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
         ResultSet rsForumId = null;
@@ -237,46 +238,58 @@ public class PostDAO {
                 Long idThread = input.getLong("thread");
 
                 //postListByThreadId
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idThread = %d AND p.date >= '%s' ORDER BY p.date DESC LIMIT %d",
+                                    idThread,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idThread = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idThread = %d AND p.date >= '%s' ORDER BY p.date ASC LIMIT %d",
+                                    idThread,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, idThread);
-                cs.setObject(2, sinceDate);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
 
             }
             else if(input.has("forum")) {
                 String shortName = input.getString("forum");
 
-                csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
-                csForumId.setObject(1, shortName);
-                rsForumId = csForumId.executeQuery();
+                csForumId = connection.createStatement();
+                String s = String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName);
+                rsForumId = csForumId.executeQuery(
+                        String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
+                );
                 rsForumId.next();
                 Long forumId = rsForumId.getLong("id");
 
                 //postListByForumShortName
+                cs = connection.createStatement();
                 if(order.equals("desc")) {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idForum = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idForum = %d AND p.date >= '%s' ORDER BY p.date DESC LIMIT %d",
+                                    forumId,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
                 else {
-                    cs = connection.prepareStatement(
-                            "SELECT p.* FROM post AS p WHERE p.idForum = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                    rs = cs.executeQuery(
+                            String.format("SELECT p.* FROM post AS p WHERE p.idForum = %d AND p.date >= '%s' ORDER BY p.date ASC LIMIT %d",
+                                    forumId,
+                                    sinceDate,
+                                    limit
+                            )
                     );
                 }
-                cs.setObject(1, forumId);
-                cs.setObject(2, sinceDate);
-                cs.setObject(3, limit);
-                rs = cs.executeQuery();
             }
 
             while (rs.next()) {

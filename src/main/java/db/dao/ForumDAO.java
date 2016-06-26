@@ -67,13 +67,14 @@ public class ForumDAO {
         boolean needUser = false;
         String shortName;
 
-        PreparedStatement csGetForum = null;
+        Statement csGetForum = null;
         ResultSet rsGetForum = null;
         try {
             shortName = input.getString("forum");
-            csGetForum = connection.prepareStatement("SELECT * FROM forum WHERE forum.shortName = ?");
-            csGetForum.setObject(1, shortName);
-            rsGetForum = csGetForum.executeQuery();
+            csGetForum = connection.createStatement();
+            rsGetForum = csGetForum.executeQuery(
+                    String.format("SELECT * FROM forum WHERE forum.shortName = '%s'", shortName)
+            );
             rsGetForum.next();
             Long id = rsGetForum.getLong("id");
             if(input.has("related")) {
@@ -100,7 +101,7 @@ public class ForumDAO {
 
     public JSONObject detailsById (long id,
                                     boolean needUser) throws SQLException {
-        PreparedStatement csGetForum = null;
+        Statement csGetForum = null;
         ResultSet rsGetForum = null;
         JSONObject jsGetUser = null;
         JSONObject jsGetForum = null;
@@ -108,9 +109,10 @@ public class ForumDAO {
         UserDAO userDAO = new UserDAO(connection);
         JSONObject res = null;
         try {
-            csGetForum = connection.prepareStatement("SELECT * FROM forum WHERE forum.id = ?");
-            csGetForum.setObject(1, id);
-            rsGetForum = csGetForum.executeQuery();
+            csGetForum = connection.createStatement();
+            rsGetForum = csGetForum.executeQuery(
+                    String.format("SELECT * FROM forum WHERE forum.id = %d", id)
+            );
             rsGetForum.next();
 
             getForumFromResultSet(forumDataset, rsGetForum);
@@ -138,8 +140,8 @@ public class ForumDAO {
     }
 
     public JSONArray listPosts (JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csForumId = null;
+        Statement cs = null;
+        Statement csForumId = null;
         ForumDataset forumDataset = new ForumDataset();
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
@@ -184,27 +186,34 @@ public class ForumDAO {
             array = new JSONArray();
             String shortName = input.getString("forum");
 
-            csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
-            csForumId.setObject(1, shortName);
-            rsForumId = csForumId.executeQuery();
+            csForumId = connection.createStatement();
+            String s = String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName);
+            rsForumId = csForumId.executeQuery(
+                    String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
+            );
             rsForumId.next();
             Long forumId = rsForumId.getLong("id");
 
             //forumListPostsByForumShortName
+            cs = connection.createStatement();
             if(order.equals("desc")) {
-                cs = connection.prepareStatement(
-                        "SELECT * FROM post WHERE post.idForum = ? AND post.date >= ? ORDER BY post.date DESC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT * FROM post WHERE post.idForum = %d AND post.date >= '%s' ORDER BY post.date DESC LIMIT %d",
+                                forumId,
+                                sinceDate,
+                                limit
+                        )
                 );
             }
             else {
-                cs = connection.prepareStatement(
-                        "SELECT * FROM post WHERE post.idForum = ? AND post.date >= ? ORDER BY post.date ASC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT * FROM post WHERE post.idForum = %d AND post.date >= '%s' ORDER BY post.date ASC LIMIT %d",
+                                forumId,
+                                sinceDate,
+                                limit
+                        )
                 );
             }
-            cs.setObject(1, forumId);
-            cs.setObject(2, sinceDate);
-            cs.setObject(3, limit);
-            rs = cs.executeQuery();
             while (rs.next()) {
                 PostDAO.getPostFromResultSet(postDataset, rs);
                 tmp = postDAO.detailsById(postDataset.id, needUser, needThread, needForum);
@@ -229,8 +238,8 @@ public class ForumDAO {
     }
 
     public JSONArray listThreads (JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csForumId = null;
+        Statement cs = null;
+        Statement csForumId = null;
         ThreadDataset threadDataset = new ThreadDataset();
         ResultSet rs = null;
         ResultSet rsForumId = null;
@@ -273,27 +282,33 @@ public class ForumDAO {
             array = new JSONArray();
             String shortName = input.getString("forum");
 
-            csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
-            csForumId.setObject(1, shortName);
-            rsForumId = csForumId.executeQuery();
+            csForumId = connection.createStatement();
+            rsForumId = csForumId.executeQuery(
+                    String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
+            );
             rsForumId.next();
             Long forumId = rsForumId.getLong("id");
 
             //forumListThreadsByForumShortName
+            cs = connection.createStatement();
             if(order.equals("desc")) {
-                cs = connection.prepareStatement(
-                        "SELECT * FROM thread WHERE thread.idForum = ? AND thread.date >= ? ORDER BY thread.date DESC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT * FROM thread WHERE thread.idForum = %d AND thread.date >= '%s' ORDER BY thread.date DESC LIMIT %d",
+                                forumId,
+                                sinceDate,
+                                limit
+                        )
                 );
             }
             else {
-                cs = connection.prepareStatement(
-                        "SELECT * FROM thread WHERE thread.idForum = ? AND thread.date >= ? ORDER BY thread.date ASC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT * FROM thread WHERE thread.idForum = %d AND thread.date >= '%s' ORDER BY thread.date ASC LIMIT %d",
+                                forumId,
+                                sinceDate,
+                                limit
+                        )
                 );
             }
-            cs.setObject(1, forumId);
-            cs.setObject(2, sinceDate);
-            cs.setObject(3, limit);
-            rs = cs.executeQuery();
             while (rs.next()) {
                 ThreadDAO.getThreadFromResultSet(threadDataset, rs);
                 tmp = threadDAO.detailsById(threadDataset.id, needUser, needForum);
@@ -318,8 +333,8 @@ public class ForumDAO {
     }
 
     public JSONArray listUsers (JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csForumId = null;
+        Statement cs = null;
+        Statement csForumId = null;
         UserDataset userDataset = new UserDataset();
         ResultSet rs = null;
         ResultSet rsForumId = null;
@@ -350,27 +365,33 @@ public class ForumDAO {
             array = new JSONArray();
             String shortName = input.getString("forum");
 
-            csForumId = connection.prepareStatement("SELECT forum.id FROM forum WHERE forum.shortName = ?");
-            csForumId.setObject(1, shortName);
-            rsForumId = csForumId.executeQuery();
+            csForumId = connection.createStatement();
+            rsForumId = csForumId.executeQuery(
+                    String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
+            );
             rsForumId.next();
             Long forumId = rsForumId.getLong("id");
 
             //forumListUserByForumShortName
+            cs = connection.createStatement();
             if(order.equals("desc")) {
-                cs = connection.prepareStatement(
-                        "SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = ? AND p1.idUser >= ? GROUP BY p1.idUser ORDER BY p1.name DESC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = %d AND p1.idUser >= %d GROUP BY p1.idUser ORDER BY p1.name DESC LIMIT %d",
+                                forumId,
+                                since_id,
+                                limit
+                        )
                 );
             }
             else {
-                cs = connection.prepareStatement(
-                        "SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = ? AND p1.idUser >= ? GROUP BY p1.idUser ORDER BY p1.name ASC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = %d AND p1.idUser >= %d GROUP BY p1.idUser ORDER BY p1.name ASC LIMIT %d",
+                                forumId,
+                                since_id,
+                                limit
+                        )
                 );
             }
-            cs.setObject(1, forumId);
-            cs.setObject(2, since_id);
-            cs.setObject(3, limit);
-            rs = cs.executeQuery();
 
             while (rs.next()) {
                 UserDAO.getUserFromResultSet(userDataset, rs);

@@ -83,14 +83,15 @@ public class UserDAO {
     }
 
     public JSONObject detailsByEmail(String userEmail) throws SQLException {
-        PreparedStatement csGetUser = null;
+        Statement csGetUser = null;
         ResultSet rsGetUser = null;
         UserDataset userDataset = new UserDataset();
         try {
             //csGetUser = connection.prepareCall("{ call getUserByEmail(?) }");
-            csGetUser = connection.prepareStatement("SELECT * FROM user WHERE user.email = ?");
-            csGetUser.setObject(1, userEmail);
-            rsGetUser = csGetUser.executeQuery();
+            csGetUser = connection.createStatement();
+            rsGetUser = csGetUser.executeQuery(
+                    String.format("SELECT * FROM user WHERE user.email = '%s'", userEmail)
+            );
             rsGetUser.next();
             getUserFromResultSet(userDataset, rsGetUser);
             return detailsById(userDataset.id);
@@ -107,10 +108,10 @@ public class UserDAO {
     }
 
     public JSONObject detailsById(long userId) throws SQLException {
-        PreparedStatement csGetUser = null;
-        PreparedStatement csGetFollowers = null;
-        PreparedStatement csGetFollowees = null;
-        PreparedStatement csGetSubscriptions = null;
+        Statement csGetUser = null;
+        Statement csGetFollowers = null;
+        Statement csGetFollowees = null;
+        Statement csGetSubscriptions = null;
         ResultSet rsGetUser = null;
         ResultSet rsGetFollowers = null;
         ResultSet rsGetFollowees = null;
@@ -118,9 +119,11 @@ public class UserDAO {
         UserDataset userDataset = new UserDataset();
         JSONObject res = null;
         try {
-            csGetUser = connection.prepareStatement("SELECT * FROM user WHERE user.id = ?");
-            csGetUser.setObject(1, userId);
-            rsGetUser = csGetUser.executeQuery();
+
+            csGetUser = connection.createStatement();
+            rsGetUser = csGetUser.executeQuery(
+                    String.format("SELECT * FROM user WHERE user.id = %d", userId)
+            );
             rsGetUser.next();
             if(rsGetUser.isAfterLast()) {
                 throw new SQLException("user not found");
@@ -135,27 +138,36 @@ public class UserDAO {
             userDataset.isAnonymous = rsGetUser.getInt("isAnonymous");*/
 
             //csGetFollowers = connection.prepareStatement("{ call userGetEmailsOfFollowersByUserId(?) }");
-            csGetFollowers = connection.prepareStatement("SELECT  userFollowers.emailFollower FROM userFollowers USE INDEX(userGetEmailsOfFollowersByUserId_idx) WHERE userFollowers.idFollowee = ?");
-            csGetFollowers.setObject(1, userDataset.id);
-            rsGetFollowers = csGetFollowers.executeQuery();
+            csGetFollowers = connection.createStatement();
+            rsGetFollowers = csGetFollowers.executeQuery(
+                    String.format("SELECT  userFollowers.emailFollower FROM userFollowers USE INDEX(userGetEmailsOfFollowersByUserId_idx) WHERE userFollowers.idFollowee = %d",
+                                userDataset.id
+                            )
+            );
             JSONArray arrayOfFollowers = new JSONArray();
             while (rsGetFollowers.next()) {
                 arrayOfFollowers.put(rsGetFollowers.getString("emailFollower"));
             }
 
             //csGetFollowees = connection.prepareStatement("{ call userGetEmailsOfFolloweesByUserId(?) }");
-            csGetFollowees = connection.prepareStatement("SELECT  userFollowers.emailFollowee FROM userFollowers USE INDEX(userGetEmailsOfFolloweesByUserId_idx) WHERE userFollowers.idFollower = ?");
-            csGetFollowees.setObject(1, userDataset.id);
-            rsGetFollowees = csGetFollowees.executeQuery();
+            csGetFollowees = connection.createStatement();
+            rsGetFollowees = csGetFollowees.executeQuery(
+                    String.format("SELECT  userFollowers.emailFollowee FROM userFollowers USE INDEX(userGetEmailsOfFolloweesByUserId_idx) WHERE userFollowers.idFollower = %d",
+                                userDataset.id
+                            )
+            );
+
             JSONArray arrayOfFollowees = new JSONArray();
             while (rsGetFollowees.next()) {
                 arrayOfFollowees.put(rsGetFollowees.getString("emailFollowee"));
             }
 
             //csGetSubscriptions = connection.prepareStatement("{ call userGetSubscriptionsByUserId(?) }");
-            csGetSubscriptions = connection.prepareStatement("SELECT  (idThread) FROM threadSubscribers WHERE idUser = ?");
-            csGetSubscriptions.setObject(1, userDataset.id);
-            rsGetSubscriptions = csGetSubscriptions.executeQuery();
+            csGetSubscriptions = connection.createStatement();
+            rsGetSubscriptions = csGetSubscriptions.executeQuery(
+                    String.format("SELECT  (idThread) FROM threadSubscribers WHERE idUser = %d", userDataset.id)
+            );
+
             JSONArray arrayOfSubscriptions = new JSONArray();
             while (rsGetSubscriptions.next()) {
                 arrayOfSubscriptions.put(rsGetSubscriptions.getLong("idThread"));
@@ -212,8 +224,8 @@ public class UserDAO {
     }
 
     public JSONArray listFollowers(JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csUserId = null;
+        Statement cs = null;
+        Statement csUserId = null;
         UserDataset userDataset = new UserDataset();
         ResultSet rs = null;
         ResultSet rsUserId = null;
@@ -236,27 +248,33 @@ public class UserDAO {
                 sinceId = input.getLong("since_id");
             else sinceId = 0L;
 
-            csUserId = connection.prepareStatement("SELECT user.id FROM user WHERE user.email = ?");
-            csUserId.setObject(1, userEmail);
-            rsUserId = csUserId.executeQuery();
+            csUserId = connection.createStatement();
+            rsUserId = csUserId.executeQuery(
+                    String.format("SELECT user.id FROM user WHERE user.email = '%s'", userEmail)
+            );
             rsUserId.next();
             Long userIdFollowee = rsUserId.getLong("id");
 
             //userListFollowersIdsByUserEmail
+            cs = connection.createStatement();
             if(order.equals("desc")) {
-                cs = connection.prepareStatement(
-                        "SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = ? AND u1.id = f.idFollowee JOIN user AS u2 ON f.idFollower = u2.id WHERE u2.id >= ? ORDER BY u2.name DESC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollowee JOIN user AS u2 ON f.idFollower = u2.id WHERE u2.id >= %d ORDER BY u2.name DESC LIMIT %d",
+                                userIdFollowee,
+                                sinceId,
+                                limit
+                        )
                 );
             }
             else {
-                cs = connection.prepareStatement(
-                        "SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = ? AND u1.id = f.idFollowee JOIN user AS u2 ON f.idFollower = u2.id WHERE u2.id >= ? ORDER BY u2.name ASC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollowee JOIN user AS u2 ON f.idFollower = u2.id WHERE u2.id >= %d ORDER BY u2.name ASC LIMIT %d",
+                                userIdFollowee,
+                                sinceId,
+                                limit
+                        )
                 );
             }
-            cs.setObject(1, userIdFollowee);
-            cs.setObject(2, sinceId);
-            cs.setObject(3, limit);
-            rs = cs.executeQuery();
 
             array = new JSONArray();
             while (rs.next()) {
@@ -281,8 +299,8 @@ public class UserDAO {
     }
 
     public JSONArray listFollowing(JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csUserId = null;
+        Statement cs = null;
+        Statement csUserId = null;
         UserDataset userDataset = new UserDataset();
         ResultSet rs = null;
         ResultSet rsUserId = null;
@@ -305,27 +323,33 @@ public class UserDAO {
                 sinceId = input.getLong("since_id");
             else sinceId = 0L;
 
-            csUserId = connection.prepareStatement("SELECT user.id FROM user WHERE user.email = ?");
-            csUserId.setObject(1, userEmail);
-            rsUserId = csUserId.executeQuery();
+            csUserId = connection.createStatement();
+            rsUserId = csUserId.executeQuery(
+                    String.format("SELECT user.id FROM user WHERE user.email = '%s'", userEmail)
+            );
             rsUserId.next();
             Long userIdFollower = rsUserId.getLong("id");
 
             //userListFolloweesIdsByUserEmail
+            cs = connection.createStatement();
             if(order.equals("desc")) {
-                cs = connection.prepareStatement(
-                        "SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = ? AND u1.id = f.idFollower JOIN user AS u2 ON f.idFollowee = u2.id WHERE u2.id >= ? ORDER BY u2.name DESC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollower JOIN user AS u2 ON f.idFollowee = u2.id WHERE u2.id >= %d ORDER BY u2.name DESC LIMIT %d",
+                                userIdFollower,
+                                sinceId,
+                                limit
+                        )
                 );
             }
             else {
-                cs = connection.prepareStatement(
-                        "SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = ? AND u1.id = f.idFollower JOIN user AS u2 ON f.idFollowee = u2.id WHERE u2.id >= ? ORDER BY u2.name ASC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollower JOIN user AS u2 ON f.idFollowee = u2.id WHERE u2.id >= %d ORDER BY u2.name ASC LIMIT %d",
+                                userIdFollower,
+                                sinceId,
+                                limit
+                        )
                 );
             }
-            cs.setObject(1, userIdFollower);
-            cs.setObject(2, sinceId);
-            cs.setObject(3, limit);
-            rs = cs.executeQuery();
 
             array = new JSONArray();
             while (rs.next()) {
@@ -350,8 +374,8 @@ public class UserDAO {
     }
 
     public JSONArray listPosts(JSONObject input) throws SQLException {
-        PreparedStatement cs = null;
-        PreparedStatement csUserId = null;
+        Statement cs = null;
+        Statement csUserId = null;
         PostDataset postDataset = new PostDataset();
         ResultSet rs = null;
         ResultSet rsUserId = null;
@@ -375,27 +399,33 @@ public class UserDAO {
                 sinceDate = input.getString("since");
             else sinceDate = "1970-10-10 01-01-01";
 
-            csUserId = connection.prepareStatement("SELECT user.id FROM user WHERE user.email = ?");
-            csUserId.setObject(1, userEmail);
-            rsUserId = csUserId.executeQuery();
+            csUserId = connection.createStatement();
+            rsUserId = csUserId.executeQuery(
+                    String.format("SELECT user.id FROM user WHERE user.email = '%s'", userEmail)
+            );
             rsUserId.next();
             Long userId = rsUserId.getLong("id");
 
             //userListPostsByUserEmail
+            cs = connection.createStatement();
             if(order.equals("desc")) {
-                cs = connection.prepareStatement(
-                        "SELECT p.* FROM post AS p WHERE p.idUser = ? AND p.date >= ? ORDER BY p.date DESC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT p.* FROM post AS p WHERE p.idUser = %d AND p.date >= '%s' ORDER BY p.date DESC LIMIT %d",
+                                userId,
+                                sinceDate,
+                                limit
+                        )
                 );
             }
             else {
-                cs = connection.prepareStatement(
-                        "SELECT p.* FROM post AS p WHERE p.idUser = ? AND p.date >= ? ORDER BY p.date ASC LIMIT ?"
+                rs = cs.executeQuery(
+                        String.format("SELECT p.* FROM post AS p WHERE p.idUser = %d AND p.date >= '%s' ORDER BY p.date ASC LIMIT %d",
+                                userId,
+                                sinceDate,
+                                limit
+                        )
                 );
             }
-            cs.setObject(1, userId);
-            cs.setObject(2, sinceDate);
-            cs.setObject(3, limit);
-            rs = cs.executeQuery();
 
             array = new JSONArray();
             while (rs.next()) {
