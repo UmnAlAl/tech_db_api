@@ -206,7 +206,7 @@ public class PostDAO {
         }
     }
 
-    public JSONArray list (JSONObject input) throws SQLException {
+    public JSONArray list (JSONObject input) throws SQLException, Exception {
         Statement cs = null;
         Statement csForumId = null;
         PostDataset postDataset = new PostDataset();
@@ -215,6 +215,9 @@ public class PostDAO {
         JSONArray array = null;
         JSONObject tmp = null;
         try {
+
+            if(input.has("post"))
+                throw new Exception("Semantic error.");
 
             Long limit;
             if(input.has("limit"))

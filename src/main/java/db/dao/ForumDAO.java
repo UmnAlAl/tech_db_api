@@ -73,7 +73,7 @@ public class ForumDAO {
             shortName = input.getString("forum");
             csGetForum = connection.createStatement();
             rsGetForum = csGetForum.executeQuery(
-                    String.format("SELECT * FROM forum WHERE forum.shortName = '%s'", shortName)
+                    String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
             );
             rsGetForum.next();
             Long id = rsGetForum.getLong("id");
@@ -198,7 +198,7 @@ public class ForumDAO {
             cs = connection.createStatement();
             if(order.equals("desc")) {
                 rs = cs.executeQuery(
-                        String.format("SELECT * FROM post WHERE post.idForum = %d AND post.date >= '%s' ORDER BY post.date DESC LIMIT %d",
+                        String.format("SELECT post.id FROM post WHERE post.idForum = %d AND post.date >= '%s' ORDER BY post.date DESC LIMIT %d",
                                 forumId,
                                 sinceDate,
                                 limit
@@ -207,16 +207,18 @@ public class ForumDAO {
             }
             else {
                 rs = cs.executeQuery(
-                        String.format("SELECT * FROM post WHERE post.idForum = %d AND post.date >= '%s' ORDER BY post.date ASC LIMIT %d",
+                        String.format("SELECT post.id FROM post WHERE post.idForum = %d AND post.date >= '%s' ORDER BY post.date ASC LIMIT %d",
                                 forumId,
                                 sinceDate,
                                 limit
                         )
                 );
             }
+
+            Long postId = null;
             while (rs.next()) {
-                PostDAO.getPostFromResultSet(postDataset, rs);
-                tmp = postDAO.detailsById(postDataset.id, needUser, needThread, needForum);
+                postId = rs.getLong("id");
+                tmp = postDAO.detailsById(postId, needUser, needThread, needForum);
                 array.put(tmp);
             }
 
@@ -293,7 +295,7 @@ public class ForumDAO {
             cs = connection.createStatement();
             if(order.equals("desc")) {
                 rs = cs.executeQuery(
-                        String.format("SELECT * FROM thread WHERE thread.idForum = %d AND thread.date >= '%s' ORDER BY thread.date DESC LIMIT %d",
+                        String.format("SELECT thread.id FROM thread WHERE thread.idForum = %d AND thread.date >= '%s' ORDER BY thread.date DESC LIMIT %d",
                                 forumId,
                                 sinceDate,
                                 limit
@@ -302,16 +304,18 @@ public class ForumDAO {
             }
             else {
                 rs = cs.executeQuery(
-                        String.format("SELECT * FROM thread WHERE thread.idForum = %d AND thread.date >= '%s' ORDER BY thread.date ASC LIMIT %d",
+                        String.format("SELECT thread.id FROM thread WHERE thread.idForum = %d AND thread.date >= '%s' ORDER BY thread.date ASC LIMIT %d",
                                 forumId,
                                 sinceDate,
                                 limit
                         )
                 );
             }
+
+            Long threadId = null;
             while (rs.next()) {
-                ThreadDAO.getThreadFromResultSet(threadDataset, rs);
-                tmp = threadDAO.detailsById(threadDataset.id, needUser, needForum);
+                threadId = rs.getLong("id");
+                tmp = threadDAO.detailsById(threadId, needUser, needForum);
                 array.put(tmp);
             }
 
@@ -332,7 +336,7 @@ public class ForumDAO {
         }
     }
 
-    public JSONArray listUsers (JSONObject input) throws SQLException {
+    public JSONArray listUsers (JSONObject input) throws SQLException{
         Statement cs = null;
         Statement csForumId = null;
         UserDataset userDataset = new UserDataset();
@@ -376,7 +380,7 @@ public class ForumDAO {
             cs = connection.createStatement();
             if(order.equals("desc")) {
                 rs = cs.executeQuery(
-                        String.format("SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = %d AND p1.idUser >= %d GROUP BY p1.idUser ORDER BY p1.name DESC LIMIT %d",
+                        String.format("SELECT DISTINCT idUser FROM post AS p1 WHERE p1.idForum = %d AND p1.idUser >= %d ORDER BY p1.name DESC LIMIT %d",
                                 forumId,
                                 since_id,
                                 limit
@@ -385,7 +389,7 @@ public class ForumDAO {
             }
             else {
                 rs = cs.executeQuery(
-                        String.format("SELECT u1.* FROM post AS p1 JOIN user AS u1 ON p1.idUser = u1.id WHERE p1.idForum = %d AND p1.idUser >= %d GROUP BY p1.idUser ORDER BY p1.name ASC LIMIT %d",
+                        String.format("SELECT DISTINCT idUser FROM post AS p1 WHERE p1.idForum = %d AND p1.idUser >= %d ORDER BY p1.name ASC LIMIT %d",
                                 forumId,
                                 since_id,
                                 limit
@@ -393,9 +397,10 @@ public class ForumDAO {
                 );
             }
 
+            Long userId = null;
             while (rs.next()) {
-                UserDAO.getUserFromResultSet(userDataset, rs);
-                tmp = userDAO.detailsById(userDataset.id);
+                userId = rs.getLong("idUser");
+                tmp = userDAO.detailsById(userId);
                 array.put(tmp);
             }
 

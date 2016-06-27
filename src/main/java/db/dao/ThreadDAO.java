@@ -196,7 +196,7 @@ public class ThreadDAO {
         }
     }
 
-    public JSONArray list (JSONObject input) throws SQLException {
+    public JSONArray list (JSONObject input) throws SQLException, Exception {
         Statement cs = null;
         Statement csForumId = null;
         Statement csUserId = null;
@@ -207,6 +207,9 @@ public class ThreadDAO {
         JSONArray array = null;
         JSONObject tmp = null;
         try {
+
+            if(input.has("thread"))
+                throw new Exception("Semantic error.");
 
             Long limit;
             if(input.has("limit"))
@@ -242,7 +245,7 @@ public class ThreadDAO {
                 cs = connection.createStatement();
                 if(order.equals("desc")) {
                     rs = cs.executeQuery(
-                            String.format("SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date DESC LIMIT %d",
+                            String.format("SELECT t.*, f.shortName FROM thread AS t JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = %d AND t.date >= '%s' ORDER BY t.date DESC LIMIT %d",
                                     userId,
                                     sinceDate,
                                     limit
@@ -251,7 +254,7 @@ public class ThreadDAO {
                 }
                 else {
                     rs = cs.executeQuery(
-                            String.format("SELECT t.*, f.shortName, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date ASC LIMIT %d",
+                            String.format("SELECT t.*, f.shortName FROM thread AS t JOIN forum AS f ON f.id = t.idForum WHERE t.idUser = %d AND t.date >= '%s' ORDER BY t.date ASC LIMIT %d",
                                     userId,
                                     sinceDate,
                                     limit
@@ -264,7 +267,7 @@ public class ThreadDAO {
                     tmp = threadDataset.toJSONObject();
                     tmp.put("forum", rs.getString("shortName"));
                     tmp.put("user", founderEmail);
-                    tmp.put("posts", rs.getLong("cnt"));
+                    tmp.put("posts", rs.getLong("posts"));
                     array.put(tmp);
                 }
 
@@ -273,7 +276,6 @@ public class ThreadDAO {
                 String shortName = input.getString("forum");
 
                 csForumId = connection.createStatement();
-                String s = String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName);
                 rsForumId = csForumId.executeQuery(
                         String.format("SELECT forum.id FROM forum WHERE forum.shortName = '%s'", shortName)
                 );
@@ -284,7 +286,7 @@ public class ThreadDAO {
                 cs = connection.createStatement();
                 if(order.equals("desc")) {
                     rs = cs.executeQuery(
-                            String.format("SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date DESC LIMIT %d",
+                            String.format("SELECT t.*, u.email FROM thread AS t JOIN user AS u ON u.id = t.idUser WHERE t.idForum = %d AND t.date >= '%s' ORDER BY t.date DESC LIMIT %d",
                                     forumId,
                                     sinceDate,
                                     limit
@@ -293,7 +295,7 @@ public class ThreadDAO {
                 }
                 else {
                     rs = cs.executeQuery(
-                            String.format("SELECT t.*, u.email, COUNT(*) as cnt FROM thread AS t JOIN post AS p ON p.idThread = t.id JOIN user AS u ON u.id = t.idUser WHERE t.idForum = %d AND t.date >= '%s' GROUP BY t.id ORDER BY t.date ASC LIMIT %d",
+                            String.format("SELECT t.*, u.email FROM thread AS t JOIN user AS u ON u.id = t.idUser WHERE t.idForum = %d AND t.date >= '%s' ORDER BY t.date ASC LIMIT %d",
                                     forumId,
                                     sinceDate,
                                     limit
@@ -306,7 +308,7 @@ public class ThreadDAO {
                     tmp = threadDataset.toJSONObject();
                     tmp.put("forum", shortName);
                     tmp.put("user", rs.getString("email"));
-                    tmp.put("posts", rs.getLong("cnt"));
+                    tmp.put("posts", rs.getLong("posts"));
                     array.put(tmp);
                 }
             }

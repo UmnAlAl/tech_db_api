@@ -90,11 +90,11 @@ public class UserDAO {
             //csGetUser = connection.prepareCall("{ call getUserByEmail(?) }");
             csGetUser = connection.createStatement();
             rsGetUser = csGetUser.executeQuery(
-                    String.format("SELECT * FROM user WHERE user.email = '%s'", userEmail)
+                    String.format("SELECT user.id FROM user WHERE user.email = '%s'", userEmail)
             );
             rsGetUser.next();
-            getUserFromResultSet(userDataset, rsGetUser);
-            return detailsById(userDataset.id);
+            Long userId = rsGetUser.getLong("id");
+            return detailsById(userId);
         }
         catch (Exception e) {
             throw e;
@@ -259,7 +259,7 @@ public class UserDAO {
             cs = connection.createStatement();
             if(order.equals("desc")) {
                 rs = cs.executeQuery(
-                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollowee JOIN user AS u2 ON f.idFollower = u2.id WHERE u2.id >= %d ORDER BY u2.name DESC LIMIT %d",
+                        String.format("SELECT DISTINCT u2.id FROM userFollowers AS f JOIN user AS u2 ON f.idFollower = u2.id WHERE f.idFollowee = %d AND u2.id >= %d ORDER BY u2.name DESC LIMIT %d",
                                 userIdFollowee,
                                 sinceId,
                                 limit
@@ -268,7 +268,7 @@ public class UserDAO {
             }
             else {
                 rs = cs.executeQuery(
-                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollowee JOIN user AS u2 ON f.idFollower = u2.id WHERE u2.id >= %d ORDER BY u2.name ASC LIMIT %d",
+                        String.format("SELECT DISTINCT u2.id FROM userFollowers AS f JOIN user AS u2 ON f.idFollower = u2.id WHERE f.idFollowee = %d AND u2.id >= %d ORDER BY u2.name ASC LIMIT %d",
                                 userIdFollowee,
                                 sinceId,
                                 limit
@@ -334,7 +334,7 @@ public class UserDAO {
             cs = connection.createStatement();
             if(order.equals("desc")) {
                 rs = cs.executeQuery(
-                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollower JOIN user AS u2 ON f.idFollowee = u2.id WHERE u2.id >= %d ORDER BY u2.name DESC LIMIT %d",
+                        String.format("SELECT DISTINCT u2.id FROM userFollowers AS f JOIN user AS u2 ON f.idFollowee = u2.id WHERE f.idFollower = %d AND u2.id >= %d ORDER BY u2.name DESC LIMIT %d",
                                 userIdFollower,
                                 sinceId,
                                 limit
@@ -343,7 +343,7 @@ public class UserDAO {
             }
             else {
                 rs = cs.executeQuery(
-                        String.format("SELECT DISTINCT u2.id FROM user AS u1 JOIN userFollowers AS f ON u1.id = %d AND u1.id = f.idFollower JOIN user AS u2 ON f.idFollowee = u2.id WHERE u2.id >= %d ORDER BY u2.name ASC LIMIT %d",
+                        String.format("SELECT DISTINCT u2.id FROM userFollowers AS f JOIN user AS u2 ON f.idFollowee = u2.id WHERE f.idFollower = %d AND u2.id >= %d ORDER BY u2.name ASC LIMIT %d",
                                 userIdFollower,
                                 sinceId,
                                 limit

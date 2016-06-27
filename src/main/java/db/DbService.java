@@ -422,6 +422,11 @@ public class DbService {
             res.put("response", ex.getMessage());
             return res;
         }
+        catch(Exception ex) {
+            res.put("code", 3);
+            res.put("response", ex.getMessage());
+            return res;
+        }
         finally {
             try {
                 connection.close();
@@ -1095,6 +1100,11 @@ public class DbService {
         }
         catch (JSONException ex) {
             res.put("code", 2);
+            res.put("response", ex.getMessage());
+            return res;
+        }
+        catch(Exception ex) {
+            res.put("code", 3);
             res.put("response", ex.getMessage());
             return res;
         }
